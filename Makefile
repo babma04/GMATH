@@ -1,35 +1,47 @@
 CC = gcc
-CFLAGS = -Wall -Wextra -std=c11 -O2 -Iinclude
+CFLAGS = -Wall -Wextra -Wpedantic -std=c11 -Iinclude
 LDFLAGS = -lm
 
+# Directories
 SRC_DIR = src
 INC_DIR = include
 OBJ_DIR = obj
 BIN_DIR = bin
+TEST_DIR = tests
 
-SRCS = $(wildcard $(SRC_DIR)/*.c)
-OBJS = $(SRCS:$(SRC_DIR)/%.c=$(OBJ_DIR)/%.o)
-TARGET = $(BIN_DIR)/libgmath.a
+# Files
+SOURCES = $(wildcard $(SRC_DIR)/*.c)
+OBJECTS = $(patsubst $(SRC_DIR)/%.c, $(OBJ_DIR)/%.o, $(SOURCES))
+LIB = $(BIN_DIR)/libgmath.a
 
-all: $(TARGET)
+# Test Files
+TEST_SOURCES = $(wildcard $(TEST_DIR)/*.c)
+TEST_BINS = $(patsubst $(TEST_DIR)/%.c, $(BIN_DIR)/%, $(TEST_SOURCES))
 
-$(TARGET): $(OBJS)
-	@mkdir -p $(BIN_DIR)
+# Default Rule: Build the static library
+all: $(LIB)
+
+# Create the Static Library (Archiving object files)
+$(LIB): $(OBJECTS) | $(BIN_DIR)
 	ar rcs $@ $^
-	@echo "--------------------------------------"
-	@echo "Successfully built library: $@"
-	@echo "--------------------------------------"
 
-$(OBJ_DIR)/%.o: $(SRC_DIR)/%.c
-	@mkdir -p $(OBJ_DIR)
+# Compile Source Files to Object Files
+$(OBJ_DIR)/%.o: $(SRC_DIR)/%.c | $(OBJ_DIR)
 	$(CC) $(CFLAGS) -c $< -o $@
 
-test: $(TARGET)
-	$(CC) $(CFLAGS) tests/test_main.c -L$(BIN_DIR) -lgmath $(LDFLAGS) -o $(BIN_DIR)/test_suite
-	@echo "Test suite compiled. Run it with: ./$(BIN_DIR)/test_suite"
+# Build All Tests
+# Each .c file in tests/ becomes its own executable in bin/
+test: $(LIB) $(TEST_BINS)
 
+$(BIN_DIR)/%: $(TEST_DIR)/%.c $(LIB) | $(BIN_DIR)
+	$(CC) $(CFLAGS) $< -L$(BIN_DIR) -lgmath $(LDFLAGS) -o $@
+
+# Directory Creation
+$(OBJ_DIR) $(BIN_DIR):
+	mkdir -p $@
+
+# Cleanup
 clean:
 	rm -rf $(OBJ_DIR) $(BIN_DIR)
-	@echo "Cleanup complete."
 
-.PHONY: all clean test
+.PHONY: all test clean

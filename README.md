@@ -1,4 +1,5 @@
 # GMath
+## Author: João Carrilho Louro 
 
 A performance-oriented 3D mathematics library for C11. **GMath** is built with a column-major memory layout, ensuring native compatibility with OpenGL and modern graphics pipelines.
 
@@ -63,10 +64,15 @@ gcc main.c -I./include -L./bin -lgmath -lm -o my_program
 ```
 
 ### Testing
-To compile and run the full mathematical validation suite:
+The build system automatically detects all .c files in the tests/ directory and creates individual binaries in bin/. To build and run them:
 ```bash
+# Build all test binaries
 make test
-./bin/test_suite
+
+# Run specific suites
+./bin/test_vector
+./bin/test_matrix_advanced
+./bin/test_utils
 ```
 
 ---
@@ -125,10 +131,6 @@ int main() {
     - **g_to_radians(deg)** / **g_to_degrees(rad)**: Inline angle conversion functions.
     - **g_print_vector(v, label)**: Formatted terminal output for 4D vectors.
     - **g_print_matrix(m, label)**: Clean, grid-aligned terminal output for 4x4 matrices.
-
----
-
-## 
 
 ---
 
