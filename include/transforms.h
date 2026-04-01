@@ -11,6 +11,7 @@
 Matrix matrix_identity ();
 Matrix matrix_mult (Matrix a, Matrix b);
 Vector matrix_vector_mult (Matrix a, Vector v);
+Matrix matrix_inverse(Matrix m);
 
 // Main Transformations
 Matrix matrix_translate (float x, float y, float z);
