@@ -1,0 +1,21 @@
+# --- Build Artifacts ---
+# Ignore the object files and the final library/binaries
+obj/
+bin/
+*.o
+*.a
+*.so
+*.out
+
+# --- IDE & Editor Files ---
+# Common for VS Code
+.vscode/
+# Common for Vim/Neovim
+*.swp
+# Common for macOS users
+.DS_Store
+
+# --- Test Executables ---
+...
+# --- Log files ---
+*.log
