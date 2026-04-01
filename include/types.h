@@ -3,8 +3,8 @@
 
 // Default vector struct
 /**
- * Defines a vector with up to 4 coordenates
- * Coordenates meaning is context dependent
+ * Defines a vector with up to 4 coordinates.
+ * Coordinates meaning is context dependent
  */
 typedef struct {
     float x, y, z, w;
@@ -19,7 +19,7 @@ typedef struct {
 
 typedef struct {
     union {
-        struct {Vector a, b, c, d;}; // Use the matrix as 4 seperate vectors
+        struct {Vector a, b, c, d;}; // Use the matrix as 4 separate vectors
         float m[16]; // Use the matrix as a single array with 16 entries, still Column-Major
     };
 } FMatrix;
