@@ -2,6 +2,7 @@
 #define GMATH_TRANSFORMS_H
 
 #include "types.h"
+#include "constants.h"
 
 // Core matrix Operations
 Matrix matrix_identity ();

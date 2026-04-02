@@ -2,6 +2,7 @@
 #define GMATH_VECTOR_H
 
 #include "types.h"
+#include "constants.h"
 
 // Basic Vector Arithmetic
 void vector_sum (Vector *v, Vector *u, Vector* result);

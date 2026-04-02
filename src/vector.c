@@ -2,9 +2,6 @@
 #include <stdio.h>
 #include <math.h>
 
-// Number of coordinates in a vector, defined as a constant for easy modification
-static const int VLENGTH = 4;
-
 //------------------------ Basic Vector Arithmetic ----------------------------
 
 /**

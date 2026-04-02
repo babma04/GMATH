@@ -1,8 +1,8 @@
 #ifndef GMATH_UTILS_H
 #define GMATH_UTILS_H
 
-#include "constants.h"
 #include "types.h"
+#include "constants.h"
 
 // Value constraints
 float g_clamp (float value, float min, float max);

@@ -1,6 +1,12 @@
 #ifndef GMATH_CONSTANTS_H
 #define GMATH_CONSTANTS_H
 
+// Number of coordinates in a vector, defined as a constant for easy modification
+static const int VLENGTH = 4;
+// Number of elements in a matrix, defined as a constant for easy modification
+static const int MVLENGTH = 4;
+static const int MLENGTH = 16;
+
 // Error rounding value
 #define EPSILON 0.000001f
 // Pi value
