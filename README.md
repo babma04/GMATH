@@ -129,7 +129,7 @@ int main() {
     - **vector_slerp(v, u, t, result)**: Angular interpolation between two points.
     - **vector_safeSlerp(v, u, t, result)**: Angular interpolation between two points. Verifies the value of the interpolation factor and clamps it if it is outside the valid range. 
 
-`transforms.h`
+- `transforms.h`
     - **matrix_identity()**: Generates a 4x4 identity matrix.
     - **matrix_mult(A, B)**: High-performance matrix-matrix multiplication.
     - **matrix_vector_mult(M, V)**: Transforms a vector by a matrix.
@@ -138,7 +138,7 @@ int main() {
     - **matrix_perspective(fov, aspect, near, far)**: Generates a perspective projection matrix.
     - **Matrix Inversion:** Gaussian elimination for calculating inverse matrices.
 
-`utils.h`
+- `utils.h`
     - **g_clamp(val, min, max)**: Constrains a value within a specific range.
     - **g_min(a, b)** / **g_max(a, b)**: Standard comparison helpers.
     - **g_nearly_equal(a, b)**: Float-safe comparison using an epsilon threshold.
