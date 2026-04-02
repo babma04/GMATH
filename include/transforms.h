@@ -10,6 +10,7 @@ void matrix_mult (Matrix *a, Matrix *b, Matrix* result);
 void matrix_vector_mult (Matrix *a, Vector *v, Vector* result);
 void matrix_transpose (Matrix *m, Matrix* result);
 float matrix_determinant (Matrix *m);
+float matrix3x3_determinant (Matrix3x3 *m);
 void matrix_inverse(Matrix *m, Matrix* result);
 
 // Main Transformations

@@ -20,7 +20,7 @@ typedef struct {
  */
 typedef struct {
     union {
-        float r, g, b;
+        float x, y, z;
         float v[3];
     };
 } Vector3;
