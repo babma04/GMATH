@@ -1,7 +1,3 @@
-//
-// Created by me on 4/1/26.
-//
-
 #ifndef GMATH_TRANSFORMS_H
 #define GMATH_TRANSFORMS_H
 

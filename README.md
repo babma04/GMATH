@@ -16,8 +16,9 @@ A performance-oriented 3D mathematics library for C11. **GMath** is built with a
 
 ### Type Safety via Unions
 We use C `unions` in `types.h` to provide multiple ways to access the same memory without performance loss:
-* Access a **FMatrix** as a flat array `m[16]` for loops.
-* Access a **FMatrix** as four named column vectors `a, b, c, d` for readable transformation logic.
+* Access a **Matrix** as a flat array `m[16]` for loops.
+* Access a **Matrix** as four named column vectors `a, b, c, d` for readable transformation logic.
+The same looic is applied to vector accesses of the type **Vector**.
 
 ### Performance
 * **Single Precision:** All calculations use `float` (32-bit) to ensure compatibility with GPU vertex buffers and to minimize memory bandwidth.
@@ -109,11 +110,18 @@ int main() {
 ## 🧪 API Overview
 
 - `vector.h`
-    - **vector_sum(v, u)**: Component-wise addition.
+    - **vector_sum(v, u, result)**: Component-wise addition.
+    - **vector_sub(v, u, result)**: Component-wise subtraction.
+    - **vector_scallar(v, scalar, result)**: Component-wise scalar multiplication.
+    - **vectors_angle(v, u)**: Calculates the angle between two vectors.
     - **vector_dot(v, u)**: Scalar product for lighting and angle calculations.
-    - **vector_cross(v, u)**: Generates a perpendicular surface normal.
-    - **vector_normalize(v)**: Scales a vector to a unit length of 1.0.
-    - **vector_lerp(v, u, t)**: Linear interpolation between two points.
+    - **vector_cross3D(v, u, result)**: Generates a perpendicular surface normal.
+    - **vector_cross4D(v, u, result)**: Generates a perpendicular surface normal plane.
+    - **vector_normalize(v, result)**: Scales a vector to a unit length of 1.0.
+    - **vector_lerp(v, u, t, result)**: Linear interpolation between two points.
+    - **vector_safeLerp(v, u, t, result)**: Linear interpolation between two points. Verifies the value of the interpolation factor and clamps it if it is outside the valid range.
+    - **vector_slerp(v, u, t, result)**: Angular interpolation between two points.
+    - **vector_safeSlerp(v, u, t, result)**: Angular interpolation between two points. Verifies the value of the interpolation factor and clamps it if it is outside the valid range. 
 
 `transforms.h`
     - **matrix_identity()**: Generates a 4x4 identity matrix.
