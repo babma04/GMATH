@@ -3,79 +3,104 @@
 #include <math.h>
 #include "gmath.h"
 
-void test_rotation_precision() {
-    printf("Testing Rotation Precision (90 degrees)...\n");
-    
-    // Rotate 90 degrees around Z axis
-    // Point (1, 0, 0) should become (0, 1, 0)
-    Matrix rotZ = matrix_rotate(0, 0, 90.0f); 
-    Vector start = {1.0f, 0.0f, 0.0f, 1.0f};
-    Vector end = matrix_vector_mult(rotZ, start);
+void test_core_ops() {
+    Matrix id, a, res;
+    matrix_identity(&id);
 
-    g_print_vector(end, "After 90 deg Z rotation");
+    // Test 1: Identity Multiplication
+    matrix_translate(5.0f, 10.0f, 15.0f, &a);
+    matrix_mult(&a, &id, &res);
+    assert(matrix_compare(&a, &res) && "Identity multiplication failed!");
+
+    // Test 2: Inversion
+    Matrix inv, identity_check;
+    matrix_inverse(&a, &inv);
+    matrix_mult(&a, &inv, &identity_check);
+    // Result should be identity
+    assert(g_nearly_equal(identity_check.m[12], 0.0f) && "Inverse translation failed!");
+    assert(g_nearly_equal(identity_check.m[15], 1.0f) && "Inverse W-scaling failed!");
     
-    assert(g_nearly_equal(end.x, 0.0f));
-    assert(g_nearly_equal(end.y, 1.0f));
-    assert(g_nearly_equal(end.z, 0.0f));
-    printf("  [PASS] Z-Axis Rotation\n");
+    printf("Core Ops: PASSED\n");
 }
 
-void test_non_uniform_scaling() {
-    printf("Testing Non-Uniform Scaling...\n");
-    
-    Matrix scale = matrix_scale(0.5f, 2.0f, 10.0f);
-    Vector v = {10.0f, 10.0f, 10.0f, 1.0f};
-    Vector result = matrix_vector_mult(scale, v);
+void test_projections() {
+    Matrix proj;
+    Vector near_pt = {0, 0, -0.1f, 1.0f}; // Pt at Near Plane (Z is negative in view space)
+    Vector result;
 
-    assert(g_nearly_equal(result.x, 5.0f));
-    assert(g_nearly_equal(result.y, 20.0f));
-    assert(g_nearly_equal(result.z, 100.0f));
-    printf("  [PASS] Non-uniform scale\n");
+    // Test 3: Standard Perspective (Near -> -1.0)
+    matrix_perspective(90.0f, 1.0f, 0.1f, 100.0f, &proj);
+    matrix_vector_mult(&proj, &near_pt, &result);
+    float ndc_z = result.z / result.w;
+    assert(g_nearly_equal(ndc_z, -1.0f) && "Standard Perspective Near-Z mapping failed!");
+
+    // Test 4: Reverse-Z (Near -> 1.0)
+    matrix_perspective_reversed_z(90.0f, 1.0f, 0.1f, 100.0f, &proj);
+    matrix_vector_mult(&proj, &near_pt, &result);
+    ndc_z = result.z / result.w;
+    assert(g_nearly_equal(ndc_z, 1.0f) && "Reverse-Z Near-Z mapping failed!");
+    
+    // Test 5: Infinite Reverse-Z (Far -> 0.0)
+    Vector far_pt = {0, 0, -1000000.0f, 1.0f}; // Point very far away
+    matrix_perspective_infinite_reversed_z(90.0f, 1.0f, 0.1f, &proj);
+    matrix_vector_mult(&proj, &far_pt, &result);
+    ndc_z = result.z / result.w;
+    assert(g_nearly_equal(ndc_z, 0.0f) && "Infinite Reverse-Z Far-Z mapping failed!");
+
+    printf("Projections: PASSED\n");
 }
 
-void test_transformation_order() {
-    printf("Testing Transformation Order (T * R vs R * T)...\n");
-    
-    Matrix T = matrix_translate(5.0f, 0.0f, 0.0f);
-    Matrix R = matrix_rotate(0.0f, 0.0f, 90.0f);
-    
-    // Case 1: Translate then Rotate (Rotate * Translate)
-    // Point (0,0,0) -> Translate to (5,0,0) -> Rotate 90 deg around origin -> (0,5,0)
-    Matrix TR = matrix_mult(R, T); 
-    Vector p1 = {0.0f, 0.0f, 0.0f, 1.0f};
-    Vector res1 = matrix_vector_mult(TR, p1);
-    
-    // Case 2: Rotate then Translate (Translate * Rotate)
-    // Point (0,0,0) -> Rotate (still 0,0,0) -> Translate to (5,0,0) -> (5,0,0)
-    Matrix RT = matrix_mult(T, R);
-    Vector res2 = matrix_vector_mult(RT, p1);
+void test_camera_and_frustum() {
+    Matrix view, proj, vp;
+    Vector eye = {0, 0, 5}, target = {0, 0, 0}, up = {0, 1, 0};
+    Vector planes[6];
 
-    assert(g_nearly_equal(res1.y, 5.0f)); // Should be at (0, 5, 0)
-    assert(g_nearly_equal(res2.x, 5.0f)); // Should be at (5, 0, 0)
+    // Test 6: LookAt
+    matrix_look_at(&eye, &target, &up, &view);
+    Vector test_pt = {0, 0, 0, 1}; // Target should be at (0,0,-5) in view space
+    Vector res_pt;
+    matrix_vector_mult(&view, &test_pt, &res_pt);
+    assert(g_nearly_equal(res_pt.z, -5.0f) && "LookAt Translation/Orientation failed!");
+
+    // Test 7: Frustum Extraction
+    matrix_perspective(90.0f, 1.0f, 0.1f, 100.0f, &proj);
+    matrix_mult(&proj, &view, &vp);
+    matrix_extract_frustum(&vp, planes);
     
-    printf("  [PASS] Matrix non-commutativity (Order matters)\n");
+    // Near plane normal should point roughly towards the camera (+Z in view space)
+    // After normalization, the magnitude of the normal (x,y,z) must be 1.0
+    float mag = sqrtf(planes[0].x*planes[0].x + planes[0].y*planes[0].y + planes[0].z*planes[0].z);
+    assert(g_nearly_equal(mag, 1.0f) && "Frustum Plane Normalization failed!");
+
+    printf("Camera & Frustum: PASSED\n");
 }
 
-void test_singular_matrix_inverse() {
-    printf("Testing Inverse of Singular Matrix (Scale 0)...\n");
+void test_normals() {
+    Matrix model;
+    Matrix3x3 normal_mat;
     
-    // A matrix with a scale of 0 on any axis cannot be inverted (it flattens space)
-    Matrix singular = matrix_scale(0.0f, 1.0f, 1.0f);
-    Matrix inv = matrix_inverse(singular);
+    // Test 8: Non-uniform scaling (Scale X by 2)
+    matrix_scale(2.0f, 1.0f, 1.0f, &model);
+    matrix_to_normal_matrix(&model, &normal_mat);
     
-    // Depending on your implementation, this should either return 0s 
-    // or handle the failure gracefully.
-    printf("  [INFO] Singular matrix handled.\n");
+    Vector3 n = {1.0f, 0.0f, 0.0f}; // X-axis normal
+    Vector3 res_n;
+    matrix3_vector3_mult(&normal_mat, &n, &res_n);
+    
+    // In a normal matrix (Inverse Transpose), scaling by 2 becomes scaling by 0.5
+    assert(g_nearly_equal(res_n.x, 0.5f) && "Normal Matrix non-uniform scale failed!");
+
+    printf("Normal Matrix: PASSED\n");
 }
 
 int main() {
     printf("Starting Advanced GMath Tests...\n");
     printf("--------------------------------\n");
 
-    test_rotation_precision();
-    test_non_uniform_scaling();
-    test_transformation_order();
-    test_singular_matrix_inverse();
+        test_rotation_precision();
+        test_non_uniform_scaling();
+        test_transformation_order();
+        test_singular_matrix_inverse();
 
     printf("--------------------------------\n");
     printf("ALL ADVANCED TESTS PASSED!\n");

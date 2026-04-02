@@ -45,7 +45,7 @@ typedef struct {
 typedef struct {
     union {
         struct {Vector3 a, b, c;}; // Use the triangle as 3 separate vectors
-        float v[9]; // Use the triangle as a single array with 9 entries, still Column-Major
+        float m[9]; // Use the triangle as a single array with 9 entries, still Column-Major
     };
 } Matrix3x3;
 

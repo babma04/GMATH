@@ -15,7 +15,7 @@
  * Vector result = vector_sum(v, u); // result will be {6, 8
  * @warning This function does not check for the length of the vectors, it assumes they are both of length 4.
  */
-void vector_sum (Vector *v, Vector *u, Vector* result)
+void vector_sum (const Vector *v, const Vector *u, Vector* result)
 {
     // Cycles over both input vectors and returns their coordenates summed in pairs
     for (int i = 0; i < VLENGTH; i++)
@@ -35,7 +35,7 @@ void vector_sum (Vector *v, Vector *u, Vector* result)
  * Vector result = vector_sub(v, u); // result will be {-4, -4, -4, -4}
  * @warning This function does not check for the length of the
  */
-void vector_sub (Vector *v, Vector *u, Vector* result)
+void vector_sub (const Vector *v, const Vector *u, Vector* result)
 {
     // Cycles over both input vectors and returns their coordenates subtracted in pairs
     for (int i = 0; i < VLENGTH; i++)
@@ -55,7 +55,7 @@ void vector_sub (Vector *v, Vector *u, Vector* result)
  * Vector result = vector_scalar(v, scalar); // result will be {2, 4, 6, 8}
  * @warning This function does not check for the length of the vector, it assumes it is of length 4.
  */
-void vector_scalar (Vector *v, float scalar, Vector* result)
+void vector_scalar (const Vector *v, float scalar, Vector* result)
 {
     // Cycles over the input vector and returns its coordenates multiplied by the scalar
     for (int i = 0; i < VLENGTH; i++)
@@ -79,7 +79,7 @@ void vector_scalar (Vector *v, float scalar, Vector* result)
  * @warning This function does not check for the length of the vectors, it assumes they are both of length 4.
  * If either of the input vectors has zero magnitude, the function will print a warning message to the standard error stream and return 0, as the angle is undefined in this case.
  */
-float vectors_angle (Vector *v, Vector *u)
+float vectors_angle (const Vector *v, const Vector *u)
 {
     // Calculates the angle between the input vectors using the formula: angle = acos(dot(v, u) / (magnitude(v) * magnitude(u)))
     float dot_product = vector_dot(v, u);
@@ -110,7 +110,7 @@ float vectors_angle (Vector *v, Vector *u)
  * float result = vector_dot(v, u); // result will be 70 (1*5 + 2*6 + 3*7 + 4*8)
  * @warning This function does not check for the length of the vectors, it assumes they are both of length 4.
  */
-float vector_dot (Vector *v, Vector *u)
+float vector_dot (const Vector *v, const Vector *u)
 {
     // Initializes the float value of return
     float result = 0.0;
@@ -136,7 +136,7 @@ float vector_dot (Vector *v, Vector *u)
  * It assumes they are both of length 4 and that the w coordinate is not used (i.e., the vectors are 3D vectors). 
  * The w coordinate of the result is set to 0, as the cross product of two 3D vectors is a 3D vector.
  */
-void vector_cross3D (Vector *v, Vector *u, Vector* result)
+void vector_cross3D (const Vector *v, const Vector *u, Vector* result)
 {
     // Calculates the cross product of the input vectors using the formula:    
     result->x = v->y * u->z - v->z * u->y;
@@ -162,7 +162,7 @@ void vector_cross3D (Vector *v, Vector *u, Vector* result)
  * The w coordinate of the result is calculated using the formula: v.y * u.w - v.w * u.y, which is not a standard definition of the cross product for 4D vectors. 
  * This function is provided for completeness, but its use should be carefully considered in the context of the specific application as its output is a plane defined by the two input vectors, and not a vector perpendicular to both as in the 3D case.
  */
-void vector_cross4D (Vector *v, Vector *u, Vector* result)
+void vector_cross4D (const Vector *v, const Vector *u, Vector* result)
 {
     // XY Plane component
     result->x = (v->x * u->y) - (v->y * u->x);
@@ -184,7 +184,7 @@ void vector_cross4D (Vector *v, Vector *u, Vector* result)
  * float result = vector_magnitude(v); // result will be sqrt(30)
  * @warning This function does not check for the length of the vector, it assumes it is of length 4.
  */
-float vector_magnitude (Vector *v)
+float vector_magnitude (const Vector *v)
 {
     // Initializes the float value of return
     float result = 0.0;
@@ -206,7 +206,7 @@ float vector_magnitude (Vector *v)
  * @warning This function does not check for the length of the vector, it assumes it is of length 4.
  * If the magnitude of the input vector is zero, the function returns a zero vector to avoid division by zero.
  */
-void vector_normalize (Vector *v, Vector* result)
+void vector_normalize (const Vector *v, Vector* result)
 {
     // Calculates the magnitude of the input vector
     float mag = vector_magnitude(v);
@@ -229,6 +229,34 @@ void vector_normalize (Vector *v, Vector* result)
     }
 }
 
+void vector3_normalize(const Vector3 *v, Vector3* result)
+{
+    // 1. Calculate squared magnitude
+    Vector *tmp;
+    vector3_to_4(v, tmp);
+    float mag = vector_magnitude(tmp);
+    float mag_sq = mag * mag;
+
+    // Check for zero/near-zero vector to avoid Division by Zero (NaN)
+    // Using EPSILON * EPSILON because we are comparing against mag_sq
+    if (is_nearly_equal(mag_sq, EPSILON * EPSILON))
+    {
+        result->x = 0.0f;
+        result->y = 0.0f;
+        result->z = 0.0f;
+        return;
+    }
+
+    // Calculate 1.0 / sqrt(mag_sq)
+    float inv_mag = 1.0f / sqrtf(mag_sq);
+
+    // Scale the components into the result
+    result->x = v->x * inv_mag;
+    result->y = v->y * inv_mag;
+    result->z = v->z * inv_mag;
+}
+
+
 // ------------------------ Interpolation ----------------------------
 
 /**
@@ -246,7 +274,7 @@ void vector_normalize (Vector *v, Vector* result)
  * float t = 0.5;
  * Vector result = vector_lerp(v, u, t); // result will be {3, 4, 5, 6}
  */
-void vector_lerp (Vector *v, Vector *u, float t, Vector* result)
+void vector_lerp (const Vector *v, const Vector *u, float t, Vector* result)
 {
     if (t < 0.0 || t > 1.0)
     {
@@ -274,7 +302,7 @@ void vector_lerp (Vector *v, Vector *u, float t, Vector* result)
  * Vector result = vector_safeLerp(v, u, t); // result will be {5, 6, 7, 8} and a warning message will be printed to the standard error stream because t is greater than 1. 
  * If t were -0.5, result would be {1, 2, 3, 4} and a warning message would be printed to the standard error stream because t is less than 0.
  */
-void vector_safeLerp (Vector *v, Vector *u, float t, Vector* result)
+void vector_safeLerp (const Vector *v, const Vector *u, float t, Vector* result)
 {
     if (t < 0.0 || t > 1.0)
     {
@@ -305,7 +333,7 @@ void vector_safeLerp (Vector *v, Vector *u, float t, Vector* result)
  * Vector result = vector_slerp(v, u, t); // result will be {0.70711, 0.70711, 0, 0} and a warning message will be printed to the standard error stream because the angle between v and u is 90 degrees, which is not zero but the function will still return the correct result. 
  * If v and u were parallel, for example v = {1, 0, 0, 0} and u = {2, 0, 0, 0}, result would be {1.5, 0, 0, 0} and a warning message would be printed to the standard error stream because the angle between v and u is zero.
  */
-void vector_slerp (Vector *v, Vector *u, float t, Vector* result)
+void vector_slerp (const Vector *v, const Vector *u, float t, Vector* result)
 {
     if (t < 0.0 || t > 1.0)
     {
@@ -351,7 +379,7 @@ void vector_slerp (Vector *v, Vector *u, float t, Vector* result)
  * If t were -0.5, result would be {1, 0, 0, 0} and a warning message would be printed to the standard error stream because t is less than 0. 
  * If v and u were parallel, for example v = {1, 0, 0, 0} and u = {2, 0, 0, 0}, result would be {1.5, 0, 0, 0} and a warning message would be printed to the standard error stream because the angle between v and u is zero.
  */
-void vector_safeSlerp (Vector *v, Vector *u, float t, Vector* result)
+void vector_safeSlerp (const Vector *v, const Vector *u, float t, Vector* result)
 {
     if (t < 0.0 || t > 1.0)
     {
@@ -361,3 +389,58 @@ void vector_safeSlerp (Vector *v, Vector *u, float t, Vector* result)
     vector_slerp(v, u, t, result);   
 }
 
+//------------------------ Helpers ----------------------------
+
+/**
+ * Converts a 3D vector to a 4D vector by copying the x, y, and z coordinates and setting the w coordinate to 0.
+ * @param v The 3D vector to be converted
+ * @return A new 4D vector with the x, y, and z coordinates of the input vector and w coordinate set to 0
+ * Example:
+ * Vector3 v = {1, 2, 3};
+ * Vector result = vector3_to_4(v); // result will be {1, 2, 3, 0}
+ * @warning This function does not check for the length of the input vector, it assumes it is of length 3. The w coordinate of the result is set to 0, as the input vector is a 3D vector and the w coordinate is not used in this case.
+ */
+void vector3_to_4 (const Vector3 *v, Vector* result)
+{
+    result->x = v->x;
+    result->y = v->y;
+    result->z = v->z;
+    result->w = 0.0f; // The w coordinate is set to 0, as the input vector is a 3D vector
+}
+
+/**
+ * Converts a 4D vector to a 3D vector by copying the x, y, and z coordinates and ignoring the w coordinate.
+ * @param v The 4D vector to be converted
+ * @return A new 3D vector with the x, y, and z coordinates of the input vector
+ * Example:
+ * Vector v = {1, 2, 3, 4};
+ * Vector3 result = vector4_to_3(v); // result will be {1, 2, 3}
+ * @warning This function does not check for the length of the input vector, it assumes it is of length 4. The w coordinate of the input vector is ignored, as the output vector is a 3D vector and the w coordinate is not used in this case.
+ */
+void vector4_to_3 (const Vector *v, Vector3* result)
+{
+    result->x = v->x;
+    result->y = v->y;
+    result->z = v->z;
+    // The w coordinate of the input vector is ignored, as the output vector is a 3D vector
+}
+
+/**
+ * Compares two vectors v and u, and returns 1 if they are equal (i.e., all their components are the same), or 0 otherwise.
+ * The function checks each component of the vectors (x, y, z, w) for equality, and returns 1 only if all components are equal. If any component is different, it returns 0.
+ * @param v Pointer to the first vector
+ * @param u Pointer to the second vector
+ * @return 1 if the vectors are equal, 0 otherwise
+ * Example:
+ * Vector v = {1, 2, 3, 4}; 
+ * Vector u = {1, 2, 3, 4};
+ * int result = vector_compare(&v, &u); // result will be 1, as the vectors are equal
+ * Vector w = {1, 2, 3, 5};
+ * result = vector_compare(&v, &w); // result will be 0, as the vectors are not equal (the w component is different)
+ * @warning This function does not check for the dimensions of the input vectors, it assumes they are both 4D vectors.
+ * If the vectors are not equal, the function will return 0 even if they are very close to each other (e.g., due to floating-point precision issues). In such cases, it may be more appropriate to use a function that checks for approximate equality within a certain tolerance.
+ */
+int vector_compare (const Vector *v, const Vector *u)
+{
+    return (v == u) || ((g_nearly_equal(v->x, u->x)) && (g_nearly_equal(v->y, u->y)) && (g_nearly_equal(v->z, u->z)) && (g_nearly_equal(v->w, u->w)));
+}
