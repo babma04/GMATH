@@ -36,7 +36,13 @@ GMath/
 │   ├── utils.h        # Math helpers & visualizers
 │   └── constants.h    # Mathematical constants
 ├── src/               # Implementation files (.c)
+│   ├── vector.c
+│   ├── transforms.c
+│   ├── utils.c
 ├── tests/             # Unit test suite
+│   ├── test_vector.c
+│   ├── test_transforms.c
+│   ├── test_utils.c
 ├── obj/               # Compiled object files (Git ignored)
 ├── bin/               # Compiled binaries (Git ignored)
 └── Makefile           # Build system
