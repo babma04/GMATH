@@ -87,7 +87,7 @@ float g_safe_divide(float numerator, float denominator) {
  * @warning This function does not check for the range of t, it assumes that t is a valid interpolation factor. If t is outside the range [0, 1], the result may not be meaningful as it would extrapolate beyond the range defined by a and b. It is important to ensure that t is within the expected range for the context in which this function is being used to avoid unintended results.
  */
 float g_lerp(float a, float b, float t) {
-    return a + t * (b - a);
+    return (1.0f - t) * a + t * b;
 }
 
 /**

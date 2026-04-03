@@ -62,7 +62,7 @@ void test_precision_logic() {
 void test_visualizers() {
     printf("Testing Visualizers (Manual Inspection Required)...\n");
     
-    Vector v = {1.234f, 5.678f, -9.012f, 1.0f};
+    Vector v = {{{1.234f, 5.678f, -9.012f, 1.0f}}};
     Matrix m;
     matrix_identity(&m);
     

@@ -135,12 +135,10 @@ float vector_dot (const Vector *v, const Vector *u)
  */
 void vector_cross3D (const Vector *v, const Vector *u, Vector* result)
 {
-    // Calculates the cross product of the input vectors using the formula:    
-    result->x = v->y * u->z - v->z * u->y;
-    result->y = v->z * u->x - v->x * u->z;
-    result->z = v->x * u->y - v->y * u->x;
-    // The w coordinate is set to 0, as the cross product of two 3D vectors is a 3D vector
-    result->w = 0.0;
+    result->x = (v->y * u->z) - (v->z * u->y);
+    result->y = (v->z * u->x) - (v->x * u->z);
+    result->z = (v->x * u->y) - (v->y * u->x);
+    result->w = 0.0f;
     
 }
 
@@ -205,25 +203,29 @@ float vector_magnitude (const Vector *v)
  */
 void vector_normalize (const Vector *v, Vector* result)
 {
-    // Calculates the magnitude of the input vector
-    float mag = vector_magnitude(v);
-    // Checks if the magnitude is not zero to avoid division by zero
-    if (mag != 0.0)
-    {
-        // Cycles over the input vector and returns its coordenates divided by its magnitude
-        for (int i = 0; i < VLENGTH; i++)
-        {
-            result->v[i] = g_safe_divide(v->v[i], mag);
-        }
+    float max_val = fabsf(v->x);
+    if (fabsf(v->y) > max_val) max_val = fabsf(v->y);
+    if (fabsf(v->z) > max_val) max_val = fabsf(v->z);
+    if (fabsf(v->w) > max_val) max_val = fabsf(v->w);
+
+    if (g_nearly_equal(max_val, 0.0f)) {
+        *result = (Vector){{{0}}};
+        return;
     }
-    else
-    {
-        // If the magnitude is zero, returns a zero vector
-        for (int i = 0; i < VLENGTH; i++)
-        {
-            result->v[i] = 0.0;
-        }
-    }
+
+    // 2. Scale components down by max_val to prevent overflow during squaring
+    float x = g_safe_divide(v->x, max_val);
+    float y = g_safe_divide(v->y, max_val);
+    float z = g_safe_divide(v->z, max_val);
+    float w = g_safe_divide(v->w, max_val);
+
+    float mag = sqrtf(x*x + y*y + z*z + w*w);
+    
+    // 3. The final result uses the scaled magnitude
+    result->x = g_safe_divide(x, mag);
+    result->y = g_safe_divide(y, mag);
+    result->z = g_safe_divide(z, mag);
+    result->w = g_safe_divide(w, mag);
 }
 
 /**
@@ -348,7 +350,7 @@ void vector_slerp (const Vector *v, const Vector *u, float t, Vector* result)
         fprintf(stderr, "Warning: Interpolation factor t should be between 0 and 1.\n");
     }
     float angle = vectors_angle(v, u);
-    if (angle == 0.0)
+    if (g_nearly_equal(angle, 0.0f))
     {
         // If the angle is zero, the vectors are parallel and we can use linear interpolation
         vector_lerp(v, u, t, result);

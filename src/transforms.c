@@ -388,7 +388,7 @@ void matrix_look_at (const Vector *eye, const Vector *target, const Vector *up, 
     if (g_nearly_equal(mag_r, EPSILON)) 
     {
         // Handle "Gimbal Lock": happens if looking straight up or down
-        Vector fallback_up = {{0.0f, 0.0f, 1.0f, 0.0f}};
+        Vector fallback_up = {{{0.0f, 0.0f, 1.0f, 0.0f}}};
         if (fabsf(f.z) > 0.9f) { fallback_up.z = 0.0f; fallback_up.x = 1.0f; }
         
         // Recalculate Right with fallback

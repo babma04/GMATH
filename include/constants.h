@@ -9,6 +9,7 @@ static const int MLENGTH = 16;
 
 // Error rounding value
 #define EPSILON 0.000001f
+#define TRIG_EPSILON 0.0001f
 // Pi value
 #define PI 3.14159265358979323846f
 // Degrees and radian convertion constants
