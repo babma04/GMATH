@@ -52,10 +52,13 @@ typedef struct {
 /**
  * Defines a quaternion with 4 coordinates: x, y, z, w.
  * The x, y, and z coordinates represent the vector part of the quaternion, while the w coordinate represents the scalar part. 
- * Quaternions are often used to represent rotations in 3D space, where the vector part encodes the axis of rotation and the scalar part encodes the angle of rotation.
+ * To Be used in a future implementation of a separate quaternion.h and .c files
  */
 typedef struct {
-    float x, y, z, w;
+    union {
+            struct {float x, y, z, w;};
+            float q[4];
+    };
 } Quaternion;
 
 
