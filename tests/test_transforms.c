@@ -93,16 +93,141 @@ void test_normals() {
     printf("Normal Matrix: PASSED\n");
 }
 
+void test_rotation_precision() {
+    printf("Testing Rotation Precision (360-degree loop)...\n");
+    Matrix rot, total;
+    Vector axis = {{0, 1, 0, 0}}; // Rotate around Y
+    float step = g_to_radians(10.0f); // 10 degree steps
+    
+    matrix_identity(&total);
+    
+    // Rotate 36 degrees * 10 times = 360 degrees
+    for(int i = 0; i < 36; i++) {
+        matrix_rotate(&axis, step, &rot);
+        Matrix temp;
+        matrix_mult(&rot, &total, &temp); // total = rot * total
+        total = temp;
+    }
+    
+    // After 360 degrees, it should be the identity matrix again
+    assert(g_nearly_equal(total.m[0], 1.0f) && "X-axis drift after 360 rotation!");
+    assert(g_nearly_equal(total.m[5], 1.0f) && "Y-axis drift after 360 rotation!");
+    assert(fabsf(total.m[1]) < 0.001f && "Off-axis skew in rotation loop!");
+    
+    printf("✓ Rotation Precision: PASSED\n");
+}
+
+void test_non_uniform_scaling() {
+    printf("Testing Non-Uniform Scaling...\n");
+    Matrix scale;
+    Vector v = {{1, 1, 1, 1}};
+    Vector res;
+    
+    matrix_scale(2.0f, 0.5f, 10.0f, &scale);
+    matrix_vector_mult(&scale, &v, &res);
+    
+    assert(res.x == 2.0f);
+    assert(res.y == 0.5f);
+    assert(res.z == 10.0f);
+    printf("✓ Non-Uniform Scaling: PASSED\n");
+}
+
+void test_transformation_order() {
+    printf("Testing Transformation Order (TRS vs SRT)...\n");
+    Matrix T, R, S, TR, TRS;
+    Vector axis = {{0, 0, 1, 0}}; // Z-axis
+    Vector p = {{1, 0, 0, 1}};    // Point at (1,0,0)
+    Vector res;
+
+    // Standard OpenGL order: Result = T * R * S * Position
+    matrix_translate(5, 0, 0, &T);
+    matrix_rotate(&axis, g_to_radians(90.0f), &R); // (1,0) -> (0,1)
+    matrix_scale(2, 2, 2, &S);
+
+    // Step 1: Scale (2,0)
+    // Step 2: Rotate (0,2)
+    // Step 3: Translate (5,2)
+    matrix_mult(&T, &R, &TR);
+    matrix_mult(&TR, &S, &TRS);
+    
+    matrix_vector_mult(&TRS, &p, &res);
+
+    assert(g_nearly_equal(res.x, 5.0f));
+    assert(g_nearly_equal(res.y, 2.0f));
+    printf("✓ Transformation Order (TRS): PASSED\n");
+}
+
+void test_singular_matrix_inverse() {
+    printf("Testing Singular Matrix Handling...\n");
+    Matrix singular, res;
+    matrix_set_to_zero(&singular); // Determinant is 0
+    
+    // Should print warning and return identity per your matrix_inverse logic
+    matrix_inverse(&singular, &res);
+    
+    assert(res.m[0] == 1.0f && res.m[15] == 1.0f);
+    printf("✓ Singular Matrix Safety: PASSED\n");
+}
+
+void test_look_at_orientation() {
+    Vector eye = {{0, 0, 0, 1}};
+    Vector target = {{0, 0, -1, 1}}; // Looking "forward" in OpenGL
+    Vector up = {{0, 1, 0, 0}};
+    Matrix res;
+
+    matrix_look_at(&eye, &target, &up, &res);
+
+    // This should result in an Identity Matrix
+    assert(is_nearly_equal(res.m[0], 1.0f));  // Right.x
+    assert(is_nearly_equal(res.m[5], 1.0f));  // Up.y
+    assert(is_nearly_equal(res.m[10], 1.0f)); // Forward.z
+    printf("✓ LookAt Orientation Passed\n");
+}
+
+void test_camera_translation() {
+    Vector eye = {{0, 0, 10, 1}};   // Camera is 10 units back
+    Vector target = {{0, 0, 0, 1}};  // Looking at origin
+    Vector up = {{0, 1, 0, 0}};
+    Matrix res;
+
+    matrix_look_at(&eye, &target, &up, &res);
+
+    // An object at (0,0,0) should now be at (0,0,-10) in camera space
+    // result->m[14] is the Z-translation in Column-Major
+    assert(is_nearly_equal(res.m[14], -10.0f)); 
+    printf("✓ Camera Translation Passed\n");
+}
+
+void test_vertical_look() {
+    Vector eye = {{0, 0, 0, 1}};
+    Vector target = {{0, 1, 0, 1}}; // Looking straight UP
+    Vector up = {{0, 1, 0, 0}};    // Up is also UP
+    Matrix res;
+
+    // This should NOT crash or produce NaNs
+    matrix_look_at(&eye, &target, &up, &res);
+    
+    assert(!isnan(res.m[0]));
+    printf("✓ Vertical Look (Gimbal) Passed\n");
+}
+
 int main() {
-    printf("Starting Advanced GMath Tests...\n");
+    printf("Starting GMath transforms Tests...\n");
     printf("--------------------------------\n");
 
         test_rotation_precision();
         test_non_uniform_scaling();
         test_transformation_order();
         test_singular_matrix_inverse();
+        test_rotation_precision();
+        test_non_uniform_scaling();
+        test_transformation_order();
+        test_singular_matrix_inverse();
+        test_look_at_orientation();
+        test_camera_translation();
+        test_vertical_look();
 
     printf("--------------------------------\n");
-    printf("ALL ADVANCED TESTS PASSED!\n");
+    printf("ALL TESTS PASSED!\n");
     return 0;
 }

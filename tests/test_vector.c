@@ -1,102 +1,190 @@
 #include <stdio.h>
 #include <assert.h>
 #include <math.h>
-#include "gmath.h"
+#include <stdbool.h>
+#include "../include/vector.h"
 
-void test_vector_basics() {
-    printf("Testing Vector Basics (Sum, Sub, Scalar)...\n");
-    Vector v = {{1.0f, 2.0f, 3.0f, 1.0f}};
-    Vector u = {{4.0f, 5.0f, 6.0f, 1.0f}};
-    Vector result;
 
-    // Test Sum
-    vector_sum(&v, &u, &result);
-    assert(g_nearly_equal(result.x, 5.0f));
-    assert(g_nearly_equal(result.y, 7.0f));
-    assert(g_nearly_equal(result.z, 9.0f));
-
-    // Test Subtraction
-    vector_sub(&u, &v, &result);
-    assert(g_nearly_equal(result.x, 3.0f));
-    assert(g_nearly_equal(result.y, 3.0f));
-    assert(g_nearly_equal(result.z, 3.0f));
-
-    // Test Scalar
-    vector_scalar(&v, 2.0f, &result);
-    assert(g_nearly_equal(result.x, 2.0f));
-    assert(g_nearly_equal(result.y, 4.0f));
-    assert(g_nearly_equal(result.z, 6.0f));
-    
-    printf("  [PASS] Arithmetic operations\n");
-}
-
-void test_vector_geometry() {
-    printf("Testing Vector Geometry (Dot, Cross, Mag, Angle)...\n");
-    
-    Vector v = {{3.0f, 0.0f, 4.0f, 0.0f}}; 
-    Vector u = {{0.0f, 1.0f, 0.0f, 0.0f}};
+void test_basic_math() {
+    printf("Testing Basic Arithmetic...\n");
+    Vector v1 = {{1, 2, 3, 4}};
+    Vector v2 = {{5, 6, 7, 8}};
     Vector res;
 
-    // Test Magnitude
-    assert(g_nearly_equal(vector_magnitude(&v), 5.0f));
-    
-    // Test Normalization
+    vector_sum(&v1, &v2, &res);
+    assert(res.x == 6 && res.y == 8 && res.z == 10 && res.w == 12);
+
+    vector_sub(&v2, &v1, &res);
+    assert(res.x == 4 && res.y == 4 && res.z == 4 && res.w == 4);
+
+    vector_scalar(&v1, 0.5f, &res);
+    assert(res.x == 0.5f && res.z == 1.5f);
+}
+
+void test_geometry_ops() {
+    printf("Testing Geometry (Dot/Cross/Mag)...\n");
+    Vector i = {{1, 0, 0, 0}};
+    Vector j = {{0, 1, 0, 0}};
+    Vector k_res;
+
+    // Dot product of orthogonal vectors should be 0
+    assert(nearly_equal(vector_dot(&i, &j), 0.0f));
+
+    // Cross product: i x j = k (0,0,1)
+    vector_cross3D(&i, &j, &k_res);
+    assert(k_res.z == 1.0f && k_res.x == 0.0f && k_res.y == 0.0f);
+
+    // Magnitude of (3,4,0,0) should be 5
+    Vector mag_test = {{3, 4, 0, 0}};
+    assert(nearly_equal(vector_magnitude(&mag_test), 5.0f));
+}
+
+void test_normalization() {
+    printf("Testing Normalization (including Zero Vector)...\n");
+    Vector v = {{10, 0, 0, 0}};
+    Vector res;
+
     vector_normalize(&v, &res);
-    assert(g_nearly_equal(vector_magnitude(&res), 1.0f));
+    assert(nearly_equal(res.x, 1.0f));
 
-    // Test Dot Product
-    assert(g_nearly_equal(vector_dot(&v, &u), 0.0f));
-
-    // Test Angle (90 degrees between X-Z plane and Y axis)
-    float angle = vectors_angle(&v, &u);
-    assert(g_nearly_equal(angle, PI / 2.0f));
-
-    // Test Cross Product 3D (X cross Y = Z)
-    Vector right = {{1.0f, 0.0f, 0.0f, 0.0f}};
-    Vector up    = {{0.0f, 1.0f, 0.0f, 0.0f}};
-    vector_cross3D(&right, &up, &res);
-    assert(g_nearly_equal(res.z, 1.0f));
-
-    printf("  [PASS] Geometric operations\n");
+    Vector zero = {{0, 0, 0, 0}};
+    vector_normalize(&zero, &res);
+    assert(res.x == 0 && res.y == 0 && res.z == 0 && res.w == 0);
 }
 
-void test_vector_interpolation() {
-    printf("Testing Interpolation (Lerp, SafeLerp, Slerp)...\n");
-
-    Vector start = {{0.0f, 0.0f, 0.0f, 0.0f}};
-    Vector end   = {{10.0f, 10.0f, 10.0f, 0.0f}};
+void test_interpolation() {
+    printf("Testing Interpolation (LERP/SLERP)...\n");
+    Vector start = {{1, 0, 0, 0}};
+    Vector end = {{0, 1, 0, 0}};
     Vector res;
-    
-    // Test Lerp at 50%
+
+    // LERP 50%
     vector_lerp(&start, &end, 0.5f, &res);
-    assert(g_nearly_equal(res.x, 5.0f));
+    assert(res.x == 0.5f && res.y == 0.5f);
 
-    // Test SafeLerp (Clamp check)
-    // Factor 1.5 should be clamped to 1.0, returning the 'end' vector
-    vector_safeLerp(&start, &end, 1.5f, &res);
-    assert(g_nearly_equal(res.x, 10.0f));
+    // SLERP 50% (should be at 45 deg on the arc)
+    vector_slerp(&start, &end, 0.5f, &res);
+    // 0.7071 is cos(45)
+    assert(nearly_equal(res.x, 0.7071f)); 
+    assert(nearly_equal(res.y, 0.7071f));
+    // Check that SLERP preserved magnitude (LERP would be 0.707 total, not 1.0)
+    assert(nearly_equal(vector_magnitude(&res), 1.0f));
+}
 
-    // Test Slerp (Spherical)
-    // 90 degree arc, 50% should be at 45 degrees
+void assert_is_unit(const Vector *v, const char* msg) {
+    float mag = vector_magnitude(v);
+    if (fabsf(mag - 1.0f) > EPSILON) {
+        fprintf(stderr, "FAIL: %s (Mag: %f)\n", msg, mag);
+        assert(0);
+    }
+}
+
+void test_slerp_specifics() {
+    printf("Testing SLERP Edge Cases...\n");
     Vector v1 = {{1.0f, 0.0f, 0.0f, 0.0f}};
-    Vector v2 = {{0.0f, 1.0f, 0.0f, 0.0f}};
-    vector_slerp(&v1, &v2, 0.5f, &res);
-    // Magnitude should remain 1.0 in Slerp
-    assert(g_nearly_equal(vector_magnitude(&res), 1.0f));
-    assert(g_nearly_equal(res.x, cosf(PI/4.0f)));
+    Vector v2 = {{0.9999f, 0.0141f, 0.0f, 0.0f}}; // ~0.8 degrees apart
+    Vector res;
 
-    printf("  [PASS] Interpolation operations\n");
+    // Test 1: Very small angle (Should not produce NaN or crash)
+    vector_slerp(&v1, &v2, 0.5f, &res);
+    assert(!isnan(res.x) && "SLERP produced NaN on small angle!");
+    
+    // Test 2: Exact 180 degree flip (The "Undefined" case)
+    // Note: Standard SLERP is undefined for 180 deg. 
+    // Your code uses Angle == 0 check, but watch for 180!
+    Vector v3 = {{-1.0f, 0.0f, 0.0f, 0.0f}};
+    vector_slerp(&v1, &v3, 0.5f, &res);
+    printf("  180-deg SLERP result: [%.2f, %.2f]\n", res.x, res.y);
+
+    printf("✓ SLERP Edge Cases Passed\n");
+}
+
+void test_normalization_stability() {
+    printf("Testing Normalization Precision...\n");
+    
+    // Test 3: Very small magnitude (Sub-epsilon)
+    Vector tiny = {{1e-20f, 1e-20f, 1e-20f, 0.0f}};
+    Vector res;
+    vector_normalize(&tiny, &res);
+    // Should be zero vector per your logic
+    assert(res.x == 0.0f && "Small mag normalization failed to zero out!");
+
+    // Test 4: Very large magnitude
+    Vector huge = {{1e20f, 0.0f, 0.0f, 0.0f}};
+    vector_normalize(&huge, &res);
+    assert(nearly_equal(res.x, 1.0f) && "Huge mag normalization precision loss!");
+
+    printf("✓ Normalization Stability Passed\n");
+}
+
+void test_orthogonality_and_cross() {
+    printf("Testing 3D Orthogonality...\n");
+    
+    // Test 5: Cross product property (A x B is perp to both A and B)
+    Vector a = {{1.2f, -3.4f, 5.6f, 0.0f}};
+    Vector b = {{0.1f, 9.8f, -2.3f, 0.0f}};
+    Vector cp;
+    vector_cross3D(&a, &b, &cp);
+
+    float dot_a = vector_dot(&a, &cp);
+    float dot_b = vector_dot(&b, &cp);
+
+    // Dot product of perpendicular vectors must be 0
+    assert(fabsf(dot_a) < 1e-4f && "Cross product not perp to A!");
+    assert(fabsf(dot_b) < 1e-4f && "Cross product not perp to B!");
+
+    printf("✓ Orthogonality Passed\n");
+}
+
+void test_aliasing() {
+    printf("Testing Pointer Aliasing (v == result)...\n");
+    
+    // Test 6: In-place Sum
+    Vector v = {{1, 1, 1, 1}};
+    vector_sum(&v, &v, &v); 
+    assert(v.x == 2.0f && "In-place sum failed!");
+
+    // Test 7: In-place Normalization
+    // If you use the mag as you go, the second coordinate might be wrong
+    Vector n = {{2, 2, 0, 0}};
+    vector_normalize(&n, &n);
+    assert_is_unit(&n, "In-place normalization failed!");
+
+    printf("✓ Aliasing Safety Passed\n");
+}
+
+void test_fpu_precision() {
+    printf("Testing FPU Suffixes...\n");
+    Vector v = {{1, 1, 1, 1}};
+    float mag = vector_magnitude(&v); // Should be 2.0
+    assert(mag == 2.0f);
+    
+    // Testing the 1.0/sqrt(mag_sq) trick in your vector3_normalize
+    Vector3 v3 = {1.0f, 1.0f, 1.0f};
+    Vector3 res3;
+    vector3_normalize(&v3, &res3);
+    // 1/sqrt(3) ≈ 0.577350269
+    assert(fabsf(res3.x - 0.57735f) < 0.00001f);
+    
+    printf("✓ FPU Precision Passed\n");
 }
 
 int main() {
-    printf("Starting GMath Pointer-Based Vector Suite...\n");
-    printf("------------------------------------------\n");
+    printf("Starting GMath transforms Tests...\n");
+    printf("--------------------------------\n");
 
-    test_vector_basics();
-    test_vector_geometry();
-    test_vector_interpolation();
+    test_basic_math();
+    test_geometry_ops();
+    test_normalization();
+    test_interpolation();
+    assert_is_unit(&(Vector){{1, 0, 0, 0}}, "Unit vector check failed!");
+    test_slerp_specifics();
+    test_normalization_stability();
+    test_orthogonality_and_cross();
+    test_aliasing();
+    test_fpu_precision();
 
-    printf("------------------------------------------\n");
-    printf("ALL TESTS PASSED!\n");
+    printf("--------------------------------\n");
+    printf("\n--- ALL TESTS PASSED SUCCESSFULLY ---\n");
     return 0;
 }

@@ -216,7 +216,7 @@ void vector_normalize (const Vector *v, Vector* result)
         // Cycles over the input vector and returns its coordenates divided by its magnitude
         for (int i = 0; i < VLENGTH; i++)
         {
-            result->v[i] = v->v[i] / mag;
+            result->v[i] = g_safe_divide(v->v[i], mag);
         }
     }
     else
@@ -229,17 +229,28 @@ void vector_normalize (const Vector *v, Vector* result)
     }
 }
 
+/**
+ * Normalizes a 3D vector by dividing each of its coordinates by its magnitude.
+ * @param v The 3D vector to be normalized
+ * @return A new 3D vector with the normalized version of the input vector
+ * Example:
+ * Vector3 v = {1, 2, 3};
+ * Vector3 result = vector3_normalize(v); // result will be {0.26726, 0.53452, 0.80178}
+ * @warning This function does not check for the length of the input vector, it assumes it is of length 3. 
+ * The w coordinate of the result is not used, as the output vector is a 3D vector and the w coordinate is not defined in this case.
+ * If the magnitude of the input vector is zero or very close to zero, the function returns a zero vector to avoid division by zero and numerical instability.
+ */
 void vector3_normalize(const Vector3 *v, Vector3* result)
 {
-    // 1. Calculate squared magnitude
-    Vector *tmp;
-    vector3_to_4(v, tmp);
-    float mag = vector_magnitude(tmp);
+    // Calculate squared magnitude
+    Vector tmp;
+    vector3_to_4(v, &tmp);
+    float mag = vector_magnitude(&tmp);
     float mag_sq = mag * mag;
 
     // Check for zero/near-zero vector to avoid Division by Zero (NaN)
     // Using EPSILON * EPSILON because we are comparing against mag_sq
-    if (is_nearly_equal(mag_sq, EPSILON * EPSILON))
+    if (g_nearly_equal(mag_sq, EPSILON * EPSILON))
     {
         result->x = 0.0f;
         result->y = 0.0f;
@@ -248,7 +259,7 @@ void vector3_normalize(const Vector3 *v, Vector3* result)
     }
 
     // Calculate 1.0 / sqrt(mag_sq)
-    float inv_mag = 1.0f / sqrtf(mag_sq);
+    float inv_mag = g_safe_divide(1.0f, sqrtf(mag_sq));
 
     // Scale the components into the result
     result->x = v->x * inv_mag;
@@ -280,10 +291,10 @@ void vector_lerp (const Vector *v, const Vector *u, float t, Vector* result)
     {
         fprintf(stderr, "Warning: Interpolation factor t should be between 0 and 1.\n");
     }
-    result->x = v->x + t * (u->x - v->x);
-    result->y = v->y + t * (u->y - v->y);
-    result->z = v->z + t * (u->z - v->z);
-    result->w = v->w + t * (u->w - v->w);
+    result->x = g_lerp(v->x, u->x, t);
+    result->y = g_lerp(v->y, u->y, t);
+    result->z = g_lerp(v->z, u->z, t);
+    result->w = g_lerp(v->w, u->w, t);
 }
 
 /**
@@ -309,10 +320,10 @@ void vector_safeLerp (const Vector *v, const Vector *u, float t, Vector* result)
         fprintf(stderr, "Warning: Interpolation factor t should be between 0 and 1. Clamping to [0, 1].\n");
         t = (t < 0.0) ? 0.0 : 1.0;
     }
-    result->x = v->x + t * (u->x - v->x);
-    result->y = v->y + t * (u->y - v->y);
-    result->z = v->z + t * (u->z - v->z);
-    result->w = v->w + t * (u->w - v->w);
+    result->x = g_lerp(v->x, u->x, t);
+    result->y = g_lerp(v->y, u->y, t);
+    result->z = g_lerp(v->z, u->z, t);
+    result->w = g_lerp(v->w, u->w, t);
 }
 
 /**
@@ -347,15 +358,15 @@ void vector_slerp (const Vector *v, const Vector *u, float t, Vector* result)
     }
     else
     {
-        Vector *v_tmp = {0};
-        Vector *u_tmp = {0};
+        Vector v_tmp = {0};
+        Vector u_tmp = {0};
 
         float sin_angle = sinf(angle);
-        float factor_v = sinf((1 - t) * angle) / sin_angle;
-        float factor_u = sinf(t * angle) / sin_angle;
-        vector_scalar(v, factor_v, v_tmp);
-        vector_scalar(u, factor_u, u_tmp);
-        vector_add(v_tmp, u_tmp, result);
+        float factor_v = g_safe_divide(sinf((1 - t) * angle), sin_angle);
+        float factor_u = g_safe_divide(sinf(t * angle), sin_angle);
+        vector_scalar(v, factor_v, &v_tmp);
+        vector_scalar(u, factor_u, &u_tmp);
+        vector_sum(&v_tmp, &u_tmp, result);
     }
 }
 

@@ -49,7 +49,14 @@ typedef struct {
     };
 } Matrix3x3;
 
-
+/**
+ * Defines a quaternion with 4 coordinates: x, y, z, w.
+ * The x, y, and z coordinates represent the vector part of the quaternion, while the w coordinate represents the scalar part. 
+ * Quaternions are often used to represent rotations in 3D space, where the vector part encodes the axis of rotation and the scalar part encodes the angle of rotation.
+ */
+typedef struct {
+    float x, y, z, w;
+} Quaternion;
 
 
 #endif

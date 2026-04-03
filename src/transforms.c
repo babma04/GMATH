@@ -321,19 +321,25 @@ void matrix_rotate (Vector *axis, float angle_radians, Matrix* result)
     float t = 1.0f - c;
 
     // Normalizing the rotation axis to ensure it has a length of 1, which is necessary for the rotation to be applied correctly. The normalization is done by dividing each component of the axis vector by its magnitude.
-    vector_normalize(axis);
+    vector_normalize(axis, axis);
     float x = axis->x, y = axis->y, z = axis->z;
     
-    // Constructing the rotation matrix using the Rodrigues' rotation formula, which combines the identity matrix, the outer product of the axis vector, and the skew-symmetric matrix of the axis vector, scaled by the sine and cosine of the rotation angle.
+    // Column 0 (a)
     result->a.x = t * x * x + c;
-    result->a.y = t * x * y - s * z;
-    result->a.z = t * x * z + s * y;
-    result->b.x = t * x * y + s * z;
+    result->a.y = t * x * y + s * z; // Note: +sz
+    result->a.z = t * x * z - s * y; // Note: -sy
+
+    // Column 1 (b)
+    result->b.x = t * x * y - s * z; // Note: -sz
     result->b.y = t * y * y + c;
-    result->b.z = t * y * z - s * x;
-    result->c.x = t * x * z - s * y;
-    result->c.y = t * y * z + s * x;
+    result->b.z = t * y * z + s * x; // Note: +sx
+
+    // Column 2 (c)
+    result->c.x = t * x * z + s * y; // Note: +sy
+    result->c.y = t * y * z - s * x; // Note: -sx
     result->c.z = t * z * z + c;
+    
+    result->d.w = 1.0f;
 }
 
 //------------------------ Camera and Viewing ----------------------------
@@ -355,53 +361,73 @@ void matrix_rotate (Vector *axis, float angle_radians, Matrix* result)
  */
 void matrix_look_at (const Vector *eye, const Vector *target, const Vector *up, Matrix* result)
 {
-    Vector f = {0}, r = {0}, u = {0};  
-    // Calculate Forward vector (target - eye)
-    vector_sub(target, eye, &f);
-    if (g_nearly_equal(vector_magnitude(&f), EPSILON) == 1)
+    Vector f, r, u;
+    
+    // 1. Calculate Forward vector 
+    // For Right-Handed (OpenGL), the camera looks down the NEGATIVE Z-axis.
+    // Therefore: Forward = eye - target (points toward the camera)
+    vector_sub(eye, target, &f); 
+    
+    float mag_f = vector_magnitude(&f);
+    if (g_nearly_equal(mag_f, EPSILON))
     {
-        fprintf(stderr, "Warning: The eye and target positions are the same. The resulting view matrix will be the identity matrix.\n");
+        fprintf(stderr, "Error: Eye and Target are coincidental.\n");
         matrix_identity(result);
         return;
     }
-    vector_normalize(&f);
+    vector_normalize(&f, &f); // Normalize
 
-    // Calculate Right vector (f cross up)
-    vector_cross4D(&f, up, &r);
+    // 2. Calculate Right vector (r = up x f)
+    // We do this manually to ensure we stay in 3D space and avoid 4D cross-product overhead
+    r.x = up->y * f.z - up->z * f.y;
+    r.y = up->z * f.x - up->x * f.z;
+    r.z = up->x * f.y - up->y * f.x;
+    r.w = 0.0f;
 
-    if (g_nearly_equal(vector_magnitude(&r), EPSILON) == 1)
+    float mag_r = vector_magnitude(&r);
+    if (g_nearly_equal(mag_r, EPSILON)) 
     {
-        Vector fallback_up = {up->x + 0.001f, up->y, up->z + 0.001f, 0.0f};
-        vector_cross(&f, &fallback_up, &r);
+        // Handle "Gimbal Lock": happens if looking straight up or down
+        Vector fallback_up = {0.0f, 0.0f, 1.0f, 0.0f};
+        if (fabsf(f.z) > 0.9f) { fallback_up.z = 0.0f; fallback_up.x = 1.0f; }
+        
+        // Recalculate Right with fallback
+        r.x = fallback_up.y * f.z - fallback_up.z * f.y;
+        r.y = fallback_up.z * f.x - fallback_up.x * f.z;
+        r.z = fallback_up.x * f.y - fallback_up.y * f.x;
+        mag_r = vector_magnitude(&r);
     }
-    vector_normalize(&r);
+    vector_normalize(&r, &r);
 
-    // Calculate the true Up vector (r cross f)
-    vector_cross4D(&r, &f, &u);
+    // 3. Calculate True Up vector (u = f x r)
+    u.x = f.y * r.z - f.z * r.y;
+    u.y = f.z * r.x - f.x * r.z;
+    u.z = f.x * r.y - f.y * r.x;
+    u.w = 0.0f;
 
-    // Fill the 4x4 View Matrix (Column-Major)
+    // 4. Build the 4x4 View Matrix (Column-Major)
     matrix_identity(result);
 
-    // Row 0
+    // Column 0
     result->m[0] = r.x;
-    result->m[4] = r.y;
-    result->m[8] = r.z;
-
-    // Row 1
     result->m[1] = u.x;
+    result->m[2] = f.x;
+
+    // Column 1
+    result->m[4] = r.y;
     result->m[5] = u.y;
+    result->m[6] = f.y;
+
+    // Column 2
+    result->m[8] = r.z;
     result->m[9] = u.z;
+    result->m[10] = f.z;
 
-    // Row 2 (Negative f for OpenGL-style right-handed systems)
-    result->m[2] = -f.x;
-    result->m[6] = -f.y;
-    result->m[10] = -f.z;
-
-    // Apply Camera Translation
-    // The view matrix must move the world by the NEGATIVE of the camera position.
+    // Column 3 (Translation: -Dot products)
+    // To move the camera to the origin, we rotate the world then translate by -Eye.
     result->m[12] = -vector_dot(&r, eye);
     result->m[13] = -vector_dot(&u, eye);
-    result->m[14] = vector_dot(&f, eye);
+    result->m[14] = -vector_dot(&f, eye);
 }
 
 /**
