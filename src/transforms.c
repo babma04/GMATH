@@ -175,7 +175,7 @@ float matrix_determinant (const Matrix *m)
         // gets the 3x3 submatrix for the laplace expansion
         matrix_convert(0, i, m, &minor); 
         // Uses the laplace expansion to calculate the determinant of the 4x4 matrix, by multiplying the element of the first row with the determinant of the corresponding 3x3 submatrix, and alternating the sign for each term.
-        det += sign * m->m[i * 4] * matrix3_determinant(&minor); 
+        det += sign * m->m[i * 4] * matrix3x3_determinant(&minor); 
         // Alternates the sign for the next term in the expansion
         sign = -sign;
     }
@@ -581,7 +581,7 @@ void matrix_to_normal_matrix(const Matrix *model, Matrix3x3 *result)
     if (g_nearly_equal(det, EPSILON) == 1)
     {
         fprintf(stderr, "Warning: The upper-left 3x3 part of the model matrix is singular. The normal matrix will be set to the identity matrix.\n");
-        matrix3x3_identity(result);
+        matrix_identity3x3(result);
         return;
     }
 
@@ -758,8 +758,8 @@ int matrix_compare (const Matrix *a, const Matrix *b)
 /**
  * Converts a 4x4 matrix to a 3x3 matrix by removing the specified row and the column corresponding to the input vector.
  * The function iterates through the elements of the input matrix and copies them to the result matrix, skipping the specified row and the column corresponding to the input vector. The resulting 3x3 matrix is stored in the provided result parameter.
- * @param row The index of the row to be removed (0-based index)
- * @param v Pointer to the vector whose corresponding column in the input matrix is to be removed
+ * @param row_to_remove The index of the row to be removed (0-based index)
+ * @param column_to_remove The index of the column to be removed (0-based index)
  * @param m Pointer to the input 4x4 matrix
  * @param result Pointer to the matrix where the resulting 3x3 matrix will be stored
  * Example:
@@ -769,7 +769,7 @@ int matrix_compare (const Matrix *a, const Matrix *b)
  *             13, 14, 15, 16};
  * Vector v = {0, 1, 0, 0}; // Corresponds to the second column of the matrix
  * Matrix3x3 result;
- * matrix_convert(1, &v, &m, &result); // result will be {1, 3, 4,
+ * matrix_convert(1, 1, &m, &result); // result will be {1, 3, 4,
  *                                 //                     5, 7, 8,
  *                                 //                     9, 11, 12}
  * @warning This function does not check for the dimensions of the input matrix and vector, it assumes the input matrix is 4x4 and the vector is 4D. The row parameter should be a valid index (0, 1, 2, or 3) corresponding to the row to be removed, and the vector should correspond to one of the columns of the input matrix. If the row index is out of bounds or if the vector does not correspond to a valid column, the behavior of the function is undefined. The resulting 3x3 matrix will contain the elements of the input matrix with the specified row and column removed.   
@@ -844,7 +844,7 @@ void matrix_cofactor(const Matrix *m, Matrix *result)
     {
         for (int j = 0; j < MLENGTH; j++)
         {
-            matrix_convert(i, (Vector*)&m->m[j*4], m, &minor);
+            matrix_convert(i, j, m, &minor);
             float minor_det = matrix3x3_determinant(&minor);
             float sign = ((i + j) % 2 == 0) ? 1.0f : -1.0f;
             result->m[i + j * MLENGTH] = sign * minor_det;

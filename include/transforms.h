@@ -3,6 +3,8 @@
 
 #include "types.h"
 #include "constants.h"
+#include "vector.h"
+#include "utils.h"
 
 // Core Matrix Operations
 void matrix_identity (Matrix *result);

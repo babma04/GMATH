@@ -178,9 +178,9 @@ void test_look_at_orientation() {
     matrix_look_at(&eye, &target, &up, &res);
 
     // This should result in an Identity Matrix
-    assert(is_nearly_equal(res.m[0], 1.0f));  // Right.x
-    assert(is_nearly_equal(res.m[5], 1.0f));  // Up.y
-    assert(is_nearly_equal(res.m[10], 1.0f)); // Forward.z
+    assert(g_nearly_equal(res.m[0], 1.0f));  // Right.x
+    assert(g_nearly_equal(res.m[5], 1.0f));  // Up.y
+    assert(g_nearly_equal(res.m[10], 1.0f)); // Forward.z
     printf("✓ LookAt Orientation Passed\n");
 }
 
@@ -194,7 +194,7 @@ void test_camera_translation() {
 
     // An object at (0,0,0) should now be at (0,0,-10) in camera space
     // result->m[14] is the Z-translation in Column-Major
-    assert(is_nearly_equal(res.m[14], -10.0f)); 
+    assert(g_nearly_equal(res.m[14], -10.0f)); 
     printf("✓ Camera Translation Passed\n");
 }
 

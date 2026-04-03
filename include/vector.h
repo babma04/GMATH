@@ -3,6 +3,7 @@
 
 #include "types.h"
 #include "constants.h"
+#include "utils.h"
 
 // Basic Vector Arithmetic
 void vector_sum (const Vector *v, const Vector *u, Vector* result);

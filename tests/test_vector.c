@@ -28,7 +28,7 @@ void test_geometry_ops() {
     Vector k_res;
 
     // Dot product of orthogonal vectors should be 0
-    assert(nearly_equal(vector_dot(&i, &j), 0.0f));
+    assert(g_nearly_equal(vector_dot(&i, &j), 0.0f));
 
     // Cross product: i x j = k (0,0,1)
     vector_cross3D(&i, &j, &k_res);
@@ -36,7 +36,7 @@ void test_geometry_ops() {
 
     // Magnitude of (3,4,0,0) should be 5
     Vector mag_test = {{3, 4, 0, 0}};
-    assert(nearly_equal(vector_magnitude(&mag_test), 5.0f));
+    assert(g_nearly_equal(vector_magnitude(&mag_test), 5.0f));
 }
 
 void test_normalization() {
@@ -45,7 +45,7 @@ void test_normalization() {
     Vector res;
 
     vector_normalize(&v, &res);
-    assert(nearly_equal(res.x, 1.0f));
+    assert(g_nearly_equal(res.x, 1.0f));
 
     Vector zero = {{0, 0, 0, 0}};
     vector_normalize(&zero, &res);
@@ -65,15 +65,15 @@ void test_interpolation() {
     // SLERP 50% (should be at 45 deg on the arc)
     vector_slerp(&start, &end, 0.5f, &res);
     // 0.7071 is cos(45)
-    assert(nearly_equal(res.x, 0.7071f)); 
-    assert(nearly_equal(res.y, 0.7071f));
+    assert(g_nearly_equal(res.x, 0.7071f)); 
+    assert(g_nearly_equal(res.y, 0.7071f));
     // Check that SLERP preserved magnitude (LERP would be 0.707 total, not 1.0)
-    assert(nearly_equal(vector_magnitude(&res), 1.0f));
+    assert(g_nearly_equal(vector_magnitude(&res), 1.0f));
 }
 
 void assert_is_unit(const Vector *v, const char* msg) {
     float mag = vector_magnitude(v);
-    if (fabsf(mag - 1.0f) > EPSILON) {
+    if (!g_nearly_equal(mag, 1.0f)) {
         fprintf(stderr, "FAIL: %s (Mag: %f)\n", msg, mag);
         assert(0);
     }
@@ -112,7 +112,7 @@ void test_normalization_stability() {
     // Test 4: Very large magnitude
     Vector huge = {{1e20f, 0.0f, 0.0f, 0.0f}};
     vector_normalize(&huge, &res);
-    assert(nearly_equal(res.x, 1.0f) && "Huge mag normalization precision loss!");
+    assert(g_nearly_equal(res.x, 1.0f) && "Huge mag normalization precision loss!");
 
     printf("✓ Normalization Stability Passed\n");
 }
@@ -130,8 +130,8 @@ void test_orthogonality_and_cross() {
     float dot_b = vector_dot(&b, &cp);
 
     // Dot product of perpendicular vectors must be 0
-    assert(fabsf(dot_a) < 1e-4f && "Cross product not perp to A!");
-    assert(fabsf(dot_b) < 1e-4f && "Cross product not perp to B!");
+    assert(g_nearly_equal(dot_a, EPSILON) && "Cross product not perp to A!");
+    assert(g_nearly_equal(dot_b, EPSILON) && "Cross product not perp to B!");
 
     printf("✓ Orthogonality Passed\n");
 }
@@ -164,7 +164,7 @@ void test_fpu_precision() {
     Vector3 res3;
     vector3_normalize(&v3, &res3);
     // 1/sqrt(3) ≈ 0.577350269
-    assert(fabsf(res3.x - 0.57735f) < 0.00001f);
+    assert(g_nearly_equal(res3.x, 0.577350269f) && "FPU precision issue in vector3_normalize!");
     
     printf("✓ FPU Precision Passed\n");
 }
