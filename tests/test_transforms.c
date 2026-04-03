@@ -25,7 +25,7 @@ void test_core_ops() {
 
 void test_projections() {
     Matrix proj;
-    Vector near_pt = {0, 0, -0.1f, 1.0f}; // Pt at Near Plane (Z is negative in view space)
+    Vector near_pt = {{0, 0, -0.1f, 1.0f}}; // Pt at Near Plane (Z is negative in view space)
     Vector result;
 
     // Test 3: Standard Perspective (Near -> -1.0)
@@ -41,7 +41,7 @@ void test_projections() {
     assert(g_nearly_equal(ndc_z, 1.0f) && "Reverse-Z Near-Z mapping failed!");
     
     // Test 5: Infinite Reverse-Z (Far -> 0.0)
-    Vector far_pt = {0, 0, -1000000.0f, 1.0f}; // Point very far away
+    Vector far_pt = {{0, 0, -1000000.0f, 1.0f}}; // Point very far away
     matrix_perspective_infinite_reversed_z(90.0f, 1.0f, 0.1f, &proj);
     matrix_vector_mult(&proj, &far_pt, &result);
     ndc_z = result.z / result.w;
@@ -52,12 +52,12 @@ void test_projections() {
 
 void test_camera_and_frustum() {
     Matrix view, proj, vp;
-    Vector eye = {0, 0, 5}, target = {0, 0, 0}, up = {0, 1, 0};
+    Vector eye = {{0, 0, 5}}, target = {{0, 0, 0}}, up = {{0, 1, 0}};
     Vector planes[6];
 
     // Test 6: LookAt
     matrix_look_at(&eye, &target, &up, &view);
-    Vector test_pt = {0, 0, 0, 1}; // Target should be at (0,0,-5) in view space
+    Vector test_pt = {{0, 0, 0, 1}}; // Target should be at (0,0,-5) in view space
     Vector res_pt;
     matrix_vector_mult(&view, &test_pt, &res_pt);
     assert(g_nearly_equal(res_pt.z, -5.0f) && "LookAt Translation/Orientation failed!");
@@ -83,7 +83,7 @@ void test_normals() {
     matrix_scale(2.0f, 1.0f, 1.0f, &model);
     matrix_to_normal_matrix(&model, &normal_mat);
     
-    Vector3 n = {1.0f, 0.0f, 0.0f}; // X-axis normal
+    Vector3 n = {{1.0f, 0.0f, 0.0f}}; // X-axis normal
     Vector3 res_n;
     matrix3_vector3_mult(&normal_mat, &n, &res_n);
     

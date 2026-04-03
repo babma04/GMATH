@@ -17,11 +17,10 @@
  */
 void vector_sum (const Vector *v, const Vector *u, Vector* result)
 {
-    // Cycles over both input vectors and returns their coordenates summed in pairs
-    for (int i = 0; i < VLENGTH; i++)
-    {
-        result->v[i] = v->v[i] + u->v[i];
-    }
+    result->x = v->x + u->x;
+    result->y = v->y + u->y;
+    result->z = v->z + u->z;
+    result->w = v->w + u->w;
 }
 
 /**
@@ -37,11 +36,10 @@ void vector_sum (const Vector *v, const Vector *u, Vector* result)
  */
 void vector_sub (const Vector *v, const Vector *u, Vector* result)
 {
-    // Cycles over both input vectors and returns their coordenates subtracted in pairs
-    for (int i = 0; i < VLENGTH; i++)
-    {
-        result->v[i] = v->v[i] - u->v[i];
-    }
+    result->x = v->x - u->x;
+    result->y = v->y - u->y;
+    result->z = v->z - u->z;
+    result->w = v->w - u->w;
 }
 
 /**
@@ -57,11 +55,10 @@ void vector_sub (const Vector *v, const Vector *u, Vector* result)
  */
 void vector_scalar (const Vector *v, float scalar, Vector* result)
 {
-    // Cycles over the input vector and returns its coordenates multiplied by the scalar
-    for (int i = 0; i < VLENGTH; i++)
-    {
-        result->v[i] = v->v[i] * scalar;
-    }
+    result->x = v->x * scalar;
+    result->y = v->y * scalar;
+    result->z = v->z * scalar;
+    result->w = v->w * scalar;
 }
 
 //------------------------ Angular Vector Operations ----------------------------

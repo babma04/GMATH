@@ -8,7 +8,7 @@
  */
 typedef struct {
     union {
-        float x, y, z, w;
+        struct {float x, y, z, w;};
         float v[4];
     };
 } Vector;
@@ -20,7 +20,7 @@ typedef struct {
  */
 typedef struct {
     union {
-        float x, y, z;
+        struct {float x, y, z;};
         float v[3];
     };
 } Vector3;

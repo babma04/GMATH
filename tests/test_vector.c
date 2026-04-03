@@ -7,24 +7,24 @@
 
 void test_basic_math() {
     printf("Testing Basic Arithmetic...\n");
-    Vector v1 = {{1, 2, 3, 4}};
-    Vector v2 = {{5, 6, 7, 8}};
+    Vector v1 = {{1.0f, 2.0f, 3.0f, 4.0f}};
+    Vector v2 = {{5.0f, 6.0f, 7.0f, 8.0f}};
     Vector res;
 
     vector_sum(&v1, &v2, &res);
-    assert(res.x == 6 && res.y == 8 && res.z == 10 && res.w == 12);
+    assert(g_nearly_equal(res.x, 6.0f) && g_nearly_equal(res.y, 8.0f) && g_nearly_equal(res.z, 10.0f) && g_nearly_equal(res.w, 12.0f));
 
     vector_sub(&v2, &v1, &res);
-    assert(res.x == 4 && res.y == 4 && res.z == 4 && res.w == 4);
+    assert(g_nearly_equal(res.x, 4.0f) && g_nearly_equal(res.y, 4.0f) && g_nearly_equal(res.z, 4.0f) && g_nearly_equal(res.w, 4.0f));
 
     vector_scalar(&v1, 0.5f, &res);
-    assert(res.x == 0.5f && res.z == 1.5f);
+    assert(g_nearly_equal(res.x, 0.5f) && g_nearly_equal(res.z, 1.5f));
 }
 
 void test_geometry_ops() {
     printf("Testing Geometry (Dot/Cross/Mag)...\n");
-    Vector i = {{1, 0, 0, 0}};
-    Vector j = {{0, 1, 0, 0}};
+    Vector i = {{1.0f, 0.0f, 0.0f, 0.0f}};
+    Vector j = {{0.0f, 1.0f, 0.0f, 0.0f}};
     Vector k_res;
 
     // Dot product of orthogonal vectors should be 0
@@ -32,35 +32,35 @@ void test_geometry_ops() {
 
     // Cross product: i x j = k (0,0,1)
     vector_cross3D(&i, &j, &k_res);
-    assert(k_res.z == 1.0f && k_res.x == 0.0f && k_res.y == 0.0f);
+    assert(g_nearly_equal(k_res.z, 1.0f) && g_nearly_equal(k_res.x, 0.0f) && g_nearly_equal(k_res.y, 0.0f));
 
     // Magnitude of (3,4,0,0) should be 5
-    Vector mag_test = {{3, 4, 0, 0}};
+    Vector mag_test = {{3.0f, 4.0f, 0.0f, 0.0f}};
     assert(g_nearly_equal(vector_magnitude(&mag_test), 5.0f));
 }
 
 void test_normalization() {
     printf("Testing Normalization (including Zero Vector)...\n");
-    Vector v = {{10, 0, 0, 0}};
+    Vector v = {10.0f, 0.0f, 0.0f, 0.0f};
     Vector res;
 
     vector_normalize(&v, &res);
     assert(g_nearly_equal(res.x, 1.0f));
 
-    Vector zero = {{0, 0, 0, 0}};
+    Vector zero = {{0.0f, 0.0f, 0.0f, 0.0f}};
     vector_normalize(&zero, &res);
-    assert(res.x == 0 && res.y == 0 && res.z == 0 && res.w == 0);
+    assert(g_nearly_equal(res.x, 0.0f) && g_nearly_equal(res.y, 0.0f) && g_nearly_equal(res.z, 0.0f) && g_nearly_equal(res.w, 0.0f));
 }
 
 void test_interpolation() {
     printf("Testing Interpolation (LERP/SLERP)...\n");
-    Vector start = {{1, 0, 0, 0}};
-    Vector end = {{0, 1, 0, 0}};
+    Vector start = {{1.0f, 0.0f, 0.0f, 0.0f}};
+    Vector end = {{0.0f, 1.0f, 0.0f, 0.0f}};
     Vector res;
 
     // LERP 50%
     vector_lerp(&start, &end, 0.5f, &res);
-    assert(res.x == 0.5f && res.y == 0.5f);
+    assert(g_nearly_equal(res.x, 0.5f) && g_nearly_equal(res.y, 0.5f));
 
     // SLERP 50% (should be at 45 deg on the arc)
     vector_slerp(&start, &end, 0.5f, &res);
@@ -107,7 +107,7 @@ void test_normalization_stability() {
     Vector res;
     vector_normalize(&tiny, &res);
     // Should be zero vector per your logic
-    assert(res.x == 0.0f && "Small mag normalization failed to zero out!");
+    assert(g_nearly_equal(res.x, 0.0f) && "Small mag normalization failed to zero out!");
 
     // Test 4: Very large magnitude
     Vector huge = {{1e20f, 0.0f, 0.0f, 0.0f}};
@@ -140,13 +140,13 @@ void test_aliasing() {
     printf("Testing Pointer Aliasing (v == result)...\n");
     
     // Test 6: In-place Sum
-    Vector v = {{1, 1, 1, 1}};
+    Vector v = {{1.0f, 1.0f, 1.0f, 1.0f}};
     vector_sum(&v, &v, &v); 
-    assert(v.x == 2.0f && "In-place sum failed!");
+    assert(g_nearly_equal(v.x, 2.0f) && "In-place sum failed!");
 
     // Test 7: In-place Normalization
     // If you use the mag as you go, the second coordinate might be wrong
-    Vector n = {{2, 2, 0, 0}};
+    Vector n = {{2.0f, 2.0f, 0.0f, 0.0f}};
     vector_normalize(&n, &n);
     assert_is_unit(&n, "In-place normalization failed!");
 
@@ -155,12 +155,12 @@ void test_aliasing() {
 
 void test_fpu_precision() {
     printf("Testing FPU Suffixes...\n");
-    Vector v = {{1, 1, 1, 1}};
+    Vector v = {{1.0f, 1.0f, 1.0f, 1.0f}};
     float mag = vector_magnitude(&v); // Should be 2.0
-    assert(mag == 2.0f);
+    assert(g_nearly_equal(mag, 2.0f));
     
     // Testing the 1.0/sqrt(mag_sq) trick in your vector3_normalize
-    Vector3 v3 = {1.0f, 1.0f, 1.0f};
+    Vector3 v3 = {{1.0f, 1.0f, 1.0f}};
     Vector3 res3;
     vector3_normalize(&v3, &res3);
     // 1/sqrt(3) ≈ 0.577350269
