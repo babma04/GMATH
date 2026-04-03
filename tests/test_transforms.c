@@ -211,6 +211,54 @@ void test_vertical_look() {
     printf("✓ Vertical Look (Gimbal) Passed\n");
 }
 
+void test_infinite_reversed_z() {
+    printf("Testing Infinite Reversed-Z Projection...\n");
+
+    float fov = 90.0f;
+    float aspect = 16.0f / 9.0f;
+    float near = 0.1f;
+    Matrix m;
+
+    // Initialize our infinite matrix
+    matrix_perspective_infinite_reversed_z(fov, aspect, near, &m);
+
+    // Test Point 1: Exactly on the Near Plane
+    // Remember: Right-handed system looks down -Z
+    Vector p_near = {{{0.0f, 0.0f, -near, 1.0f}}};
+    Vector res_near;
+    matrix_vector_mult(&m, &p_near, &res_near);
+
+    // Perspective Divide (z / w)
+    float z_near_ndc = res_near.z / res_near.w;
+    
+    // Near should map to 1.0 in Reversed-Z
+    assert(g_nearly_equal(z_near_ndc, 1.0f) && "Infinite Reversed-Z: Near plane must be 1.0");
+
+    // Test Point 2: A "Star" at a massive distance
+    Vector p_star = {{{0.0f, 0.0f, -10000000.0f, 1.0f}}}; 
+    Vector res_star;
+    matrix_vector_mult(&m, &p_star, &res_star);
+
+    float z_star_ndc = res_star.z / res_star.w;
+
+    // As distance -> infinity, Z-NDC should approach 0.0 from the positive side
+    assert(z_star_ndc >= 0.0f && z_star_ndc < 0.0001f && "Infinite Reversed-Z: Far distance did not approach 0.0");
+
+    // Test Point 3: Symmetry check (X/Y projection)
+    // At 90 deg FOV, a point at (-near, near, -near) should map to (-1, 1) in XY NDC
+    Vector p_corner = {{{-near, near, -near, 1.0f}}};
+    Vector res_corner;
+    matrix_vector_mult(&m, &p_corner, &res_corner);
+    
+    float x_ndc = res_corner.x / res_corner.w;
+    float y_ndc = res_corner.y / res_corner.w;
+
+    assert(g_nearly_equal(x_ndc, -1.0f) && "Projection X-scaling failed");
+    assert(g_nearly_equal(y_ndc, 1.0f) && "Projection Y-scaling failed");
+
+    printf("✓ Infinite Reversed-Z Passed\n");
+}
+
 int main() {
     printf("Starting GMath transforms Tests...\n");
     printf("--------------------------------\n");
@@ -226,6 +274,7 @@ int main() {
         test_look_at_orientation();
         test_camera_translation();
         test_vertical_look();
+        test_infinite_reversed_z();
 
     printf("--------------------------------\n");
     printf("ALL TESTS PASSED!\n");

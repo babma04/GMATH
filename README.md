@@ -8,21 +8,29 @@ A performance-oriented 3D mathematics library for C11. **GMath** is built with a
 * **Zero-Overhead Types:** Utilizes C unions to allow access to matrices as both raw 1D arrays and named column vectors.
 * **Column-Major:** Optimized for 3D graphics (OpenGL style).
 * **Right-Handed Coordinate System:** +Y is Up, +X is Right, and -Z is Forward (into the screen).
+* **Robust Numerical Stability**: Handles extreme magnitudes (1020+) and floating-point "noise" through careful normalization and epsilon-based comparisons.
 * **Radiant-Based Trig:** Internal calculations use Radians, while public APIs provide Degree-to-Radian conversion helpers.
 * **Modular Architecture:** Separate headers for vectors, transforms, and utilities to ensure a clean and scalable codebase.
 * **Built-in Verification:** Includes a comprehensive suite of mathematical tests using C assertions.
+* **Modern Projection Suite**:
+
+    * **Reversed-Z Persistence**: Leverages floating-point density near zero to provide superior depth precision, virtually eliminating Z-fighting on distant geometry.
+
+    * **Infinite Far-Plane**: Supports astronomical draw distances via specialized projection matrices that remove the far-clip constraint.
 
 ## 🔧 Implementation Details
 
 ### Type Safety via Unions
-We use C `unions` in `types.h` to provide multiple ways to access the same memory without performance loss:
-* Access a **Matrix** as a flat array `m[16]` for loops.
+We use C `unions` and anonymous structs in `types.h` to provide multiple ways to access the same memory without performance loss:
+* Access a **Matrix** as a flat array `m.m[16]` for loops.
 * Access a **Matrix** as four named column vectors `a, b, c, d` for readable transformation logic.
-The same looic is applied to vector accesses of the type **Vector**.
+The same logic is applied to vector accesses of the type **Vector**.
 
 ### Performance
 * **Single Precision:** All calculations use `float` (32-bit) to ensure compatibility with GPU vertex buffers and to minimize memory bandwidth.
-* **Inline Helpers:** Critical conversion functions are marked `static inline` to reduce function call overhead.
+* **Numerical Hardening**: Functions like `vector_normalize` use scaling techniques to prevent intermediate overflow when squaring large components.
+
+* **Interpolation Safety**: Includes both standard and "Safe" variants of LERP and SLERP with factor clamping and monotonic precision.
 
 ## 📁 Project Structure
 
@@ -88,24 +96,18 @@ make test
 
 ```c
 #include "gmath.h"
-#include <stdio.h>
 
 int main() {
-    // 1. Initialize an identity matrix
-    Matrix model = matrix_identity();
+    // 1. Initialize with triple-brace nesting for strict C11 compliance
+    Vector start = {{{1.0f, 0.0f, 0.0f, 0.0f}}};
+    Vector end   = {{{0.0f, 1.0f, 0.0f, 0.0f}}};
+    Vector res;
 
-    // 2. Create a translation (Move 5 units on X, 10 on Z)
-    Matrix translation = matrix_translate(5.0f, 0.0f, 10.0f);
+    // 2. Perform Spherical Linear Interpolation (50%)
+    vector_slerp(&start, &end, 0.5f, &res);
 
-    // 3. Combine transformations (Multiplication)
-    model = matrix_mult(model, translation);
-
-    // 4. Transform a point
-    Vector point = {0.0f, 0.0f, 0.0f, 1.0f};
-    Vector result = matrix_vector_mult(model, point);
-
-    // 5. Visualize result using built-in utils
-    g_print_vector(result, "Transformed Point");
+    // 3. Result will be ~0.7071 on X and Y (45 degrees on arc)
+    g_print_vector(res, "SLERP Midpoint");
 
     return 0;
 }
@@ -115,36 +117,93 @@ int main() {
 
 ## 🧪 API Overview
 
-- `vector.h`
-    - **vector_sum(v, u, result)**: Component-wise addition.
-    - **vector_sub(v, u, result)**: Component-wise subtraction.
-    - **vector_scallar(v, scalar, result)**: Component-wise scalar multiplication.
-    - **vectors_angle(v, u)**: Calculates the angle between two vectors.
-    - **vector_dot(v, u)**: Scalar product for lighting and angle calculations.
-    - **vector_cross3D(v, u, result)**: Generates a perpendicular surface normal.
-    - **vector_cross4D(v, u, result)**: Generates a perpendicular surface normal plane.
-    - **vector_normalize(v, result)**: Scales a vector to a unit length of 1.0.
-    - **vector_lerp(v, u, t, result)**: Linear interpolation between two points.
-    - **vector_safeLerp(v, u, t, result)**: Linear interpolation between two points. Verifies the value of the interpolation factor and clamps it if it is outside the valid range.
-    - **vector_slerp(v, u, t, result)**: Angular interpolation between two points.
-    - **vector_safeSlerp(v, u, t, result)**: Angular interpolation between two points. Verifies the value of the interpolation factor and clamps it if it is outside the valid range. 
+- `vector.h` - Vector Algebra
+```c 
+// Basic Vector Arithmetic
+void vector_sum (const Vector *v, const Vector *u, Vector* result);
+void vector_sub (const Vector *v, const Vector *u, Vector* result);
+void vector_scalar (const Vector *v, float scalar, Vector* result);
 
-- `transforms.h`
-    - **matrix_identity()**: Generates a 4x4 identity matrix.
-    - **matrix_mult(A, B)**: High-performance matrix-matrix multiplication.
-    - **matrix_vector_mult(M, V)**: Transforms a vector by a matrix.
-    - **matrix_translate(x, y, z)**: Creates a translation matrix.
-    - **matrix_rotate(x, y, z)**: Generates rotation matrices using Euler angles.
-    - **matrix_perspective(fov, aspect, near, far)**: Generates a perspective projection matrix.
-    - **Matrix Inversion:** Gaussian elimination for calculating inverse matrices.
+// Angular Vector Operations
+float vectors_angle (const Vector *v, const Vector *u);
 
-- `utils.h`
-    - **g_clamp(val, min, max)**: Constrains a value within a specific range.
-    - **g_min(a, b)** / **g_max(a, b)**: Standard comparison helpers.
-    - **g_nearly_equal(a, b)**: Float-safe comparison using an epsilon threshold.
-    - **g_to_radians(deg)** / **g_to_degrees(rad)**: Inline angle conversion functions.
-    - **g_print_vector(v, label)**: Formatted terminal output for 4D vectors.
-    - **g_print_matrix(m, label)**: Clean, grid-aligned terminal output for 4x4 matrices.
+// Main Vector Operations
+float vector_dot (const Vector *v, const Vector *u);
+void vector_cross3D (const Vector *v, const Vector *u, Vector* result);
+void vector_cross4D (const Vector *v, const Vector *u, Vector* result);
+float vector_magnitude (const Vector *v);
+void vector_normalize (const Vector *v, Vector* result);
+void vector3_normalize(const Vector3 *v, Vector3* result);
+
+// Interpolation
+void vector_lerp (const Vector *v, const Vector *u, float t, Vector* result);
+void vector_safeLerp (const Vector *v, const Vector *u, float t, Vector* result);
+void vector_slerp (const Vector *v, const Vector *u, float t, Vector* result);
+void vector_safeSlerp (const Vector *v, const Vector *u, float t, Vector* result);
+
+// Helpers
+void vector3_to_4 (const Vector3 *v, Vector* result);
+void vector4_to_3 (const Vector *v, Vector3* result);
+int vector_compare (const Vector *v, const Vector *u);
+```
+
+- `transforms.h` - Matrix Transformations
+```c
+// Core Matrix Operations
+void matrix_identity (Matrix *result);
+void matrix_identity3x3 (Matrix3x3 *result);
+void matrix_mult (const Matrix *a, const Matrix *b, Matrix* result);
+void matrix_vector_mult (const Matrix *a, const Vector *v, Vector* result);
+void matrix3_vector3_mult (const Matrix3x3 *m, const Vector3 *v, Vector3* result);
+void matrix_transpose (const Matrix *m, Matrix* result);
+float matrix_determinant (const Matrix *m);
+float matrix3x3_determinant (const Matrix3x3 *m);
+void matrix_inverse(const Matrix *m, Matrix* result);
+
+// Main Transformations
+void matrix_translate (float x, float y, float z, Matrix* result);
+void matrix_scale (float x, float y, float z, Matrix* result);
+void matrix_rotate (Vector *axis, float angle_radians, Matrix* result);
+
+// Camera and Viewing
+void matrix_look_at (const Vector *eye, const Vector *target, const Vector *up, Matrix* result);
+void matrix_perspective (float fov_deg, float aspect, float near, float far, Matrix* result);
+void matrix_perspective_reversed_z(float fov_deg, float aspect, float near, float far, Matrix* result);
+void matrix_perspective_infinite_reversed_z(float fov_deg, float aspect, float near, Matrix* result);
+void matrix_ortho(float left, float right, float bottom, float top, float near, float far, Matrix* result);
+void matrix_to_normal_matrix(const Matrix *model, Matrix3x3 *result);
+void matrix_extract_frustum(const Matrix *view_proj, Vector planes[6]);
+void matrix_extract_frustum_rev_z(const Matrix *view_proj, Vector planes[6]);
+
+// Helpers
+int matrix_compare (const Matrix *a, const Matrix *b);
+void matrix_convert (int row_to_remove, int column_to_remove, const Matrix *input, Matrix3x3 *result);
+void matrix3x3_convert (const Matrix3x3 *m, Matrix *result);
+void matrix_cofactor(const Matrix *m, Matrix *result);
+void matrix_set_to_zero (Matrix *m);
+```
+
+- `utils.h` - Math and Debug Helpers
+```c
+// Value constraints
+float g_clamp (float value, float min, float max);
+float g_min (float a, float b);
+float g_max (float a, float b);
+float g_safe_divide (float numerator, float denominator);
+float g_lerp (float a, float b, float t);
+
+// Angle conversions
+static inline float g_to_radians (float degrees);
+static inline float g_to_degrees (float radians);
+
+// Float comparison 
+int g_nearly_equal (float a, float b);
+int g_math_cmp(float a, float b);
+
+// Math visualizer utils
+void g_print_vector (const Vector *v, const char *label);
+void g_print_matrix (const Matrix *m, const char *label);
+```
 
 ---
 

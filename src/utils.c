@@ -107,6 +107,22 @@ int g_nearly_equal (float a, float b)
 }
 
 /**
+ * Compares two float values for near equality using a different epsilon value (TRIG_EPSILON) that is more suitable for trigonometric calculations. This function is similar to g_nearly_equal but uses a larger epsilon to account for the increased precision issues that can arise in trigonometric functions.
+ * @param a First float value
+ * @param b Second float value
+ * @return 1 if a and b are nearly equal within the TRIG_EPSILON range, 0 otherwise
+ * Example:
+ * float a = sinf(PI / 4); // This should be approximately 0.7071f
+ * float b = 0.7071f;
+ * int result = g_math_cmp(a, b); // result will be 1 (true), as a and b are nearly equal within the TRIG_EPSILON range
+ * If a were 0.5f and b were 0.5f, result would also be 1 (true), as they are exactly equal.
+ */
+int g_math_cmp(float a, float b) 
+{
+    return fabsf(a - b) < TRIG_EPSILON;
+}
+
+/**
  * Prints the components of a vector to the standard output in a readable format.
  * @param v The vector to be printed
  * @param label The label for the vector to be printed (for labeling purposes)

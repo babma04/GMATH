@@ -13,7 +13,6 @@ void vector_scalar (const Vector *v, float scalar, Vector* result);
 // Angular Vector Operations
 float vectors_angle (const Vector *v, const Vector *u);
 
-
 // Main Vector Operations
 float vector_dot (const Vector *v, const Vector *u);
 void vector_cross3D (const Vector *v, const Vector *u, Vector* result);

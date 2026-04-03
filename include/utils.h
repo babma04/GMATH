@@ -17,6 +17,7 @@ static inline float g_to_degrees (float radians) {return radians * RAD2DEG;}
 
 // Float comparison
 int g_nearly_equal (float a, float b);
+int g_math_cmp(float a, float b);
 
 // Math visualizer utils
 void g_print_vector (const Vector *v, const char *label);
